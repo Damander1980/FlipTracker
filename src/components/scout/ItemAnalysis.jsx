@@ -6,14 +6,14 @@ import CoinRain from "../CoinRain";
 import { useEbayLookup } from "../../hooks/useEbayLookup";
 
 const PASS_REASONS = [
-  { id: "price", label: "💰 Price too high" },
-  { id: "profit", label: "📉 Not enough profit" },
-  { id: "wear", label: "🔨 Too much wear" },
-  { id: "condition", label: "📦 Poor condition" },
-  { id: "identify", label: "❓ Can't verify identity" },
-  { id: "stock", label: "🗃️ Already have too many" },
-  { id: "ship", label: "⚖️ Hard to ship" },
-  { id: "other", label: "✏️ Other" },
+  { id: "price", label: "Price too high" },
+  { id: "profit", label: "Not enough profit" },
+  { id: "wear", label: "Too much wear" },
+  { id: "condition", label: "Poor condition" },
+  { id: "identify", label: "Can't verify identity" },
+  { id: "stock", label: "Already have too many" },
+  { id: "ship", label: "Hard to ship" },
+  { id: "other", label: "Other" },
 ];
 
 export default function ItemAnalysis({
@@ -101,12 +101,14 @@ export default function ItemAnalysis({
     onPass({ identified, photoDataUrl, askingPrice, avgSold, profitData, passReason: selectedPassReason, passNote, location, date: new Date().toISOString() });
   };
 
+  const ebaySearchUrl = "https://www.ebay.com/sch/i.html?_nkw=" + encodeURIComponent(identified?.searchQuery || identified?.name || "") + "&LH_Sold=1&LH_Complete=1";
+
   return (
     <div className="analysis-screen">
       <CoinRain trigger={coinTrigger} roi={profitData.roi} />
 
       <div className="analysis-header">
-        <button className="back-btn" onClick={onBack}>← Back</button>
+        <button className="back-btn" onClick={onBack}>Back</button>
         <h2>Item Analysis</h2>
         <div className="analysis-header-spacer" />
       </div>
@@ -125,36 +127,38 @@ export default function ItemAnalysis({
           <span className="analysis-era">{identified?.era}</span>
         </div>
         <div className="analysis-name">{identified?.name}</div>
-        <div className="analysis-category">📦 {getCategoryLabel(identified?.category)}</div>
+        <div className="analysis-category">
+          {getCategoryLabel(identified?.category)}
+        </div>
         {(identified?.estimatedValueLow > 0 || identified?.estimatedValueHigh > 0) && (
           <div className="analysis-value-range">
             <span className="value-label">Est. Value</span>
             <span className="value-range">
-              {formatCurrency(identified.estimatedValueLow)} — {formatCurrency(identified.estimatedValueHigh)}
+              {formatCurrency(identified.estimatedValueLow)} - {formatCurrency(identified.estimatedValueHigh)}
             </span>
           </div>
         )}
         <button className="toggle-details-btn" onClick={() => setShowFullDetails(v => !v)}>
-          {showFullDetails ? "Hide details ▲" : "Show details ▼"}
+          {showFullDetails ? "Hide details" : "Show details"}
         </button>
         {showFullDetails && (
-          <>
+          <div>
             <div className="analysis-description">{identified?.description}</div>
             {identified?.redFlags && (
-              <div className="analysis-redflag">⚠️ {identified.redFlags}</div>
+              <div className="analysis-redflag">{identified.redFlags}</div>
             )}
-            <div className="analysis-disclaimer">⚡ {identified?.aiDisclaimer}</div>
-          </>
+            <div className="analysis-disclaimer">{identified?.aiDisclaimer}</div>
+          </div>
         )}
       </div>
 
       <div className="ebay-panel">
         <div className="ebay-panel-header">
-          <span className="ebay-panel-title">📦 eBay Active Listings</span>
+          <span className="ebay-panel-title">eBay Active Listings</span>
           {ebayLoading && <span className="ebay-loading">Looking up prices...</span>}
           {!ebayLoading && stats && (
             <button className="ebay-toggle-btn" onClick={() => setShowEbayResults(v => !v)}>
-              {showEbayResults ? "Hide ▲" : "Show listings ▼"}
+              {showEbayResults ? "Hide" : "Show listings"}
             </button>
           )}
         </div>
@@ -178,17 +182,21 @@ export default function ItemAnalysis({
             </div>
             {!avgSold && (
               <button className="ebay-use-median-btn" onClick={() => setAvgSold(stats.median)}>
-                Use median ↓
+                Use median
               </button>
             )}
           </div>
         )}
-        {ebayError && <div className="ebay-error">⚠️ {ebayError}</div>}
+        {ebayError && (
+          <div className="ebay-error">{ebayError}</div>
+        )}
         {showEbayResults && results && results.length > 0 && (
           <div className="ebay-listings">
             {results.slice(0, 5).map((item, i) => (
               <a key={i} href={item.url} target="_blank" rel="noopener noreferrer" className="ebay-listing-row">
-                {item.image && <img src={item.image} alt="" className="ebay-listing-img" />}
+                {item.image && (
+                  <img src={item.image} alt="" className="ebay-listing-img" />
+                )}
                 <div className="ebay-listing-info">
                   <div className="ebay-listing-title">{item.title}</div>
                   <div className="ebay-listing-condition">{item.condition}</div>
@@ -198,13 +206,8 @@ export default function ItemAnalysis({
             ))}
           </div>
         )}
-        
-          href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(identified?.searchQuery || identified?.name || "")}&LH_Sold=1&LH_Complete=1`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ebay-search-btn"
-        >
-          🔍 Search eBay Sold Listings →
+        <a href={ebaySearchUrl} target="_blank" rel="noopener noreferrer" className="ebay-search-btn">
+          Search eBay Sold Listings
         </a>
       </div>
 
@@ -214,14 +217,29 @@ export default function ItemAnalysis({
             <label>They're asking</label>
             <div className="input-prefix">
               <span>$</span>
-              <input type="number" step="0.01" min="0" value={askingPrice} onChange={e => setAskingPrice(e.target.value)} placeholder="0.00" autoFocus />
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={askingPrice}
+                onChange={e => setAskingPrice(e.target.value)}
+                placeholder="0.00"
+                autoFocus
+              />
             </div>
           </div>
           <div className="form-group">
             <label>Avg eBay sold</label>
             <div className="input-prefix">
               <span>$</span>
-              <input type="number" step="0.01" min="0" value={avgSold} onChange={e => setAvgSold(e.target.value)} placeholder="0.00" />
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={avgSold}
+                onChange={e => setAvgSold(e.target.value)}
+                placeholder="0.00"
+              />
             </div>
           </div>
         </div>
@@ -230,7 +248,14 @@ export default function ItemAnalysis({
             <label>Est. shipping</label>
             <div className="input-prefix">
               <span>$</span>
-              <input type="number" step="0.01" min="0" value={shippingCost} onChange={e => setShippingCost(e.target.value)} placeholder="5.00" />
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={shippingCost}
+                onChange={e => setShippingCost(e.target.value)}
+                placeholder="5.00"
+              />
             </div>
           </div>
           <div className="form-group">
@@ -252,13 +277,13 @@ export default function ItemAnalysis({
           </div>
           <div className="profit-breakdown-mini">
             <span>Fees: {formatCurrency(profitData.feeAmount)}</span>
-            <span>·</span>
+            <span>.</span>
             <span>Ship: {formatCurrency(shippingCost)}</span>
-            <span>·</span>
-            <span>{isWorthIt ? "✅ Worth it" : "❌ Pass"}</span>
+            <span>.</span>
+            <span>{isWorthIt ? "Worth it" : "Pass"}</span>
           </div>
-          {isJackpot && <div className="jackpot-banner">🤑 JACKPOT FIND!</div>}
-          {isGreatFind && !isJackpot && <div className="great-find-banner">🪙 GREAT FIND!</div>}
+          {isJackpot && <div className="jackpot-banner">JACKPOT FIND!</div>}
+          {isGreatFind && !isJackpot && <div className="great-find-banner">GREAT FIND!</div>}
         </div>
       )}
 
@@ -290,14 +315,22 @@ export default function ItemAnalysis({
             ))}
           </div>
           {selectedPassReason === "other" && (
-            <textarea className="pass-note" placeholder="What's the reason?" value={passNote} onChange={e => setPassNote(e.target.value)} rows={2} />
+            <textarea
+              className="pass-note"
+              placeholder="What's the reason?"
+              value={passNote}
+              onChange={e => setPassNote(e.target.value)}
+              rows={2}
+            />
           )}
         </div>
       )}
 
       <div className="analysis-actions">
-        <button className="action-btn pass-btn" onClick={handlePass}>❌ PASS</button>
-        <button className="action-btn purchase-btn" onClick={handlePurchase} disabled={!askingPrice}>✅ PURCHASED</button>
+        <button className="action-btn pass-btn" onClick={handlePass}>PASS</button>
+        <button className="action-btn purchase-btn" onClick={handlePurchase} disabled={!askingPrice}>
+          PURCHASED
+        </button>
       </div>
     </div>
   );
