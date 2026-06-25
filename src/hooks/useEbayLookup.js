@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { supabase } from "../lib/supabaseClient";
-
+import { supabase } from "../utils/supabase";
 export function useEbayLookup() {
   const [results, setResults] = useState(null);
   const [stats, setStats] = useState(null);
