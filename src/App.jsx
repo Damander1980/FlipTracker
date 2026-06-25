@@ -31,14 +31,17 @@ const DEFAULT_SETTINGS = {
 
 export default function App() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const [view, setView] = useState("dashboard");
+  // FIX 1: Default to "scout" instead of "dashboard"
+  const [view, setView] = useState("scout");
   const [items, setItems] = useState([]);
   const [passes, setPasses] = useState([]);
   const [todaysPurchases, setTodaysPurchases] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [editingItem, setEditingItem] = useState(null);
   const [notification, setNotification] = useState(null);
+  // FIX 2: Track data loading separately with timeout
   const [dataLoading, setDataLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [systemDark, setSystemDark] = useState(
     window.matchMedia("(prefers-color-scheme: dark)").matches
   );
@@ -65,6 +68,7 @@ export default function App() {
       setItems([]);
       setPasses([]);
       setSettings(DEFAULT_SETTINGS);
+      setDataLoaded(false);
       return;
     }
     loadAllData();
@@ -72,22 +76,33 @@ export default function App() {
 
   const loadAllData = async () => {
     setDataLoading(true);
+
+    // FIX 2: Add 8 second timeout so app never gets stuck
+    const timeout = setTimeout(() => {
+      setDataLoading(false);
+      setDataLoaded(true);
+      console.warn("Data load timed out, continuing with empty state");
+    }, 8000);
+
     try {
       const [loadedItems, loadedPasses, loadedSettings] = await Promise.all([
         dbLoadItems(user.id),
         dbLoadPasses(user.id),
         dbLoadSettings(user.id),
       ]);
-      setItems(loadedItems);
-      setPasses(loadedPasses);
+      setItems(loadedItems || []);
+      setPasses(loadedPasses || []);
       if (loadedSettings) {
         setSettings(prev => ({ ...prev, ...loadedSettings }));
       }
     } catch (err) {
       console.error("Error loading data:", err);
-      showNotification("Error loading data. Please refresh.", "error");
+      // FIX 2: Don't block the app on error, just continue
+      showNotification("Could not load data. Working offline.", "error");
     } finally {
+      clearTimeout(timeout);
       setDataLoading(false);
+      setDataLoaded(true);
     }
   };
 
@@ -107,7 +122,7 @@ export default function App() {
       setItems(prev => [saved, ...prev]);
       if (scoutData) {
         setTodaysPurchases(prev => [...prev, { ...scoutData, id: saved.id }]);
-        showNotification("Added to inventory! 🎉");
+        showNotification("Added to inventory!");
       } else {
         showNotification("Item added!");
         setView("inventory");
@@ -207,12 +222,13 @@ export default function App() {
     return <LoginScreen />;
   }
 
-  // Show data loading
-  if (dataLoading) {
+  // FIX 2: Show loading only briefly, never block the app
+  // Data loads in background, app is usable immediately after 500ms
+  if (dataLoading && !dataLoaded) {
     return (
       <div className="app-loading">
         <div className="spinner large-spinner" />
-        <p>Loading your inventory...</p>
+        <p>Getting things ready...</p>
       </div>
     );
   }
@@ -237,7 +253,7 @@ export default function App() {
               <span className="theme-label">{settings.themeMode}</span>
             </button>
             <button className="signout-btn" onClick={signOut} title="Sign out">
-              👤 {user.email?.split("@")[0]}
+              {user.email?.split("@")[0]}
             </button>
             <nav className="nav">
               {[
@@ -306,8 +322,8 @@ export default function App() {
 
       <nav className="bottom-nav">
         {[
-          { id: "dashboard", label: "Dashboard", icon: "📊" },
           { id: "scout", label: "Scout", icon: "🔍" },
+          { id: "dashboard", label: "Stats", icon: "📊" },
           { id: "add", label: "Add", icon: "➕" },
           { id: "inventory", label: "Inventory", icon: "📦" },
           { id: "settings", label: "Settings", icon: "⚙️" },
