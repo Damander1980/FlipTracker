@@ -130,7 +130,7 @@ export default function Scout({ settings, onAddItem, passes = [], onPassLogged, 
           <div className="identifying-spinner large">
             <div className="spinner large-spinner" />
           </div>
-          <div className="identifying-text">Claude is identifying...</div>
+          <div className="identifying-text">Analyzing item...</div>
           <div className="identifying-sub">This takes about 3 seconds</div>
         </div>
       </div>
