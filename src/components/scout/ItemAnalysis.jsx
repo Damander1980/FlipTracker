@@ -1,4 +1,3 @@
-/* ─── eBay Live Price Panel ─────────────────────────────── */
 .ebay-panel {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
