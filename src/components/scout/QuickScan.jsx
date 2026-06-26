@@ -410,7 +410,7 @@ const s = {
   viewport: {
     position: "relative",
     width: "100%",
-    height: 220,
+    height: 300,
     background: "black",
     overflow: "hidden",
     flexShrink: 0,
@@ -422,8 +422,8 @@ const s = {
   },
   scanFrame: {
     position: "absolute",
-    width: 260,
-    height: 100,
+    width: 280,
+    height: 140,
     border: "2px solid #6c63ff",
     borderRadius: 8,
     top: "50%",
